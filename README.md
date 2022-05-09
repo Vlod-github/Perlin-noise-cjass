@@ -1,7 +1,7 @@
 # Perlin noise
 https://user-images.githubusercontent.com/103655830/167398934-4c8f0388-2f19-4f95-864a-785ae6b0663a.mp4
 
-This vjass library is for working with two-dimensional perlin noise. Depends on the [LibReal2D](https://github.com/Vlod-github/Real2D/blob/master/source/LibReal2D.cjass) library.
+This vjass library is for working with two-dimensional perlin noise. Some methods contain TriggerSleepAction() interrupts to protect against thread breakage. Depends on the [LibReal2D](https://github.com/Vlod-github/Real2D/blob/master/source/LibReal2D.cjass) library.
 ## API
 ```scala
 // Create noise. seed = -1 for random
