@@ -1,0 +1,113 @@
+// https://habr.com/ru/post/342906/
+library LibPerlin requires LibReal2D
+struct Perlin
+	private Real2D mapx
+	private Real2D mapy
+	integer octaves
+	
+	method reinit takes integer seed returns nothing
+		integer opt = 0
+		integer y = .octaves
+		if seed != -1
+			SetRandomSeed(seed)
+		endif
+		TriggerSleepAction(0)
+		loop
+		exitwhen y < 0
+			integer x = .octaves
+			loop
+			exitwhen x < 0
+				real pi = GetRandomReal(0, 6.2831)
+				call .mapx.setr(x,y,Cos(pi))//Cos(pi)*1.
+				call .mapy.setr(x,y,Sin(pi))
+				opt++
+				if opt >= 3000
+					TriggerSleepAction(0)
+					opt = 0
+				endif
+			x--
+			endloop
+		y--
+		endloop
+	endmethod
+	
+	static method create takes integer octaves, integer seed returns thistype
+		local thistype obj = thistype.allocate()
+		set obj.mapx = Real2D.create(octaves, octaves)
+		set obj.mapy = Real2D.create(octaves, octaves)
+		set obj.octaves = octaves
+		call obj.reinit(seed)
+		return obj
+	endmethod
+	
+	method destroy takes nothing returns nothing
+		call .mapy.destroy()
+		call .mapx.destroy()
+		call .deallocate()
+	endmethod
+	
+	private static method QunticCurve takes real t returns real
+		return t*t*t*(t*(t*6-15)+10)
+	endmethod
+	
+	private static method lerp takes real a, real b, real t returns real
+		return a + (b-a)*QunticCurve(t)
+	endmethod
+	
+	// x and y --- [0,1]
+	method get takes real x, real y returns real
+		integer x0 = R2I(x*.octaves), y0 = R2I(y*.octaves)
+		integer x1 = x0+1, y1 = y0+1
+		real dx = x*.octaves-x0, dy = y*.octaves-y0
+		real x00 = .mapx.getr(x0,y0)
+		real y00 = .mapy.getr(x0,y0)
+		real x01 = .mapx.getr(x0,y1)
+		real y01 = .mapy.getr(x0,y1)
+		real x10 = .mapx.getr(x1,y0)
+		real y10 = .mapy.getr(x1,y0)
+		real x11 = .mapx.getr(x1,y1)
+		real y11 = .mapy.getr(x1,y1)
+		real v00 = x00*dx+y00*dy
+		real v01 = x01*dx+y01*(dy-1)
+		real v11 = x11*(dx-1)+y11*(dy-1)
+		real v10 = x10*(dx-1)+y10*dy
+		
+		real a = lerp(v00, v01, dy)
+		real b = lerp(v10, v11, dy)
+		real c = lerp(a, b, dx)
+		//if c > 0.8
+		//endif
+		return c
+	endmethod
+	
+	method fill takes Real2D map returns Real2D
+		integer opt = 0
+		real xscale = I2R(map.length+1)/map.length  
+		real yscale = I2R(map.width+1)/map.width
+		real kx = 1./map.length, ky = 1./map.width
+		integer x = map.length
+		TriggerSleepAction(0)
+		loop
+		exitwhen x <= 0
+			integer y = map.width
+			loop
+			exitwhen y <= 0
+				real xx = (x*xscale-1)*kx
+				real yy = (y*yscale-1)*ky
+				real r = .get(xx,yy)
+				map.setr(x,y,r)
+				opt++
+				if opt >= 450
+					TriggerSleepAction(0)
+					opt = 0
+				endif
+			y--
+			endloop
+		x--
+		endloop
+		return map
+	endmethod
+	
+endstruct
+
+endlibrary
